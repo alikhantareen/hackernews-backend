@@ -43,7 +43,7 @@ app.get("/post/:id", async (req, res) => {
   }
 });
 
-//api to post a comment
+//api to post a comment and upvote
 app.post("/post/:id", async (req, res) => {
   const token = req.body.token;
   let flag = false;
@@ -96,15 +96,24 @@ app.post("/post/:id", async (req, res) => {
 });
 
 //api to create a new post
-app.post("/", async (req, res) => {
-  try {
-    const newPost = new Post({ ...req.body });
-    const insertPost = await newPost.save();
-    return res.status(201).json(insertPost);
-  } catch (error) {
-    return res
-      .status(500)
-      .json({ error: "Post can not be created at this time." });
+app.post("/addpost", async (req, res) => {
+  const token = req.body.token;
+  let flag = false;
+  if (token) {
+    flag = jwt.verify(token, process.env.JWT_SECRET);
+  }
+  if (flag) {
+    try {
+      const newPost = new Post({ ...req.body });
+      const insertPost = await newPost.save();
+      return res.status(201).json(insertPost);
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ error: "Post can not be created at this time." });
+    }
+  } else {
+    return res.status(500).json({ error: "Unauthorized user request" });
   }
 });
 
@@ -121,6 +130,17 @@ app.put("/:id", async (req, res) => {
     return res
       .status(500)
       .json({ error: "Post can not be updated at this time." });
+  }
+});
+
+//api to fetch post of specific user
+app.get("/profile/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const post = await Post.find({ user: id });
+    return res.status(200).json(post);
+  } catch (error) {
+    return res.status(404).json({ error: "user id not found" });
   }
 });
 
